@@ -68,6 +68,8 @@ def params_check(parser=None):
                       default="", help="Value of SSM parameter")
     parser.add_option("-c", "--create", action="store_true", dest="create", default=False,
                       help="Create an SSM parameter")
+    parser.add_option("-d", "--delete", action="store_true", dest="delete", default=False,
+                      help="Delete an SSM parameter")
     parser.add_option("-u", "--update", action="store_true", dest="update", default=False,
                       help="Update an SSM parameter")
     parser.add_option("-q", "--quiet", action="store_false", dest="verbose", default=True,
@@ -79,26 +81,30 @@ def params_check(parser=None):
     return (options, args)
 
 def read_options(options):
-    global g_profile, g_search, g_create, g_file, g_name, g_value, g_update, globalVerbose
+    global g_profile, g_search, g_create, g_delete, g_file, g_name, g_value, g_update, globalVerbose
 
     if options:
+        # Troubleshooting for profile param
         if options.profile == "":
             print(col.ERROR + "ERR: AWS Profile not defined" + col.END)
             print (usage)
             sys.exit(2)
         else:
             g_profile = options.profile
+
+        # Troubleshooting for create & file param
         if options.create != None and options.create == True:
             if options.yaml_file is None or options.yaml_file == "":
                 print(col.ERROR + "ERR: Must specify a file for CREATE feature" + col.END)
                 print (usage)
                 sys.exit(2)
-            if isAccessible(options.yaml_file):
-                g_file = options.yaml_file
-            else:
+            if not isAccessible(options.yaml_file):
                 print(col.ERROR + "ERR: File [{}] is not accessible".format(options.yaml_file) + col.END)
                 sys.exit(2)
         g_create = options.create
+        g_file   = options.yaml_file
+
+        # Troubleshooting for update & name param
         if options.update != None and options.update == True:
             if options.name is None or options.value is None:
                 print(col.ERROR + "ERR: Parameter Name, Value must be set for UPDATE feature" + col.END)
@@ -109,6 +115,15 @@ def read_options(options):
                 print (usage)
                 sys.exit(2)
         g_update = options.update
+        g_name   = options.name
+
+        if options.delete != None and options.delete == True:
+            if options.name is None or options.name == "":
+                print(col.ERROR + "ERR: Parameter Name must be set for DELETE feature" + col.END)
+                print (usage)
+                sys.exit(2)
+        g_delete = options.delete
+
         globalVerbose = options.verbose
 
 def isAccessible(path, mode="r"):
@@ -141,13 +156,9 @@ def get_file_handler(fileName):
 def get_all_from_profile(ssm):
     try:
         resp = ssm.describe_parameters()
-    except botocore.exceptions.ClientError as e:
-        print('request failed: {}'.format(e.response['Error']['Message']))
-        raise AwsError(e.response['Error']['Code'])
-    except botocore.exceptions.EndpointConnectionError as e:
-        logger.debug('DBG: {}'.format(e))
-        logger.debug('DBG: {}'.format(dir(e)))
-        print('request failed: {}'.format(e.response['Error']['Message']))
+    except ClientError as e:
+        logger.error(e)
+        sys.exit(1)
 
     params = resp["Parameters"]
     for item in params:
@@ -163,15 +174,15 @@ def create_parameter(ssm):
 
     # Check if YAML format is correct
     if not "Name" in param_yaml:
-        print(col.ERROR + "ERR: YAML file must contain parameter [Name]" + col.END)
+        logger.error("YAML file must contain parameter [Name]")
     if not "Description" in param_yaml:
-        print(col.ERROR + "ERR: YAML file must contain parameter [Description]" + col.END)
+        logger.error("YAML file must contain parameter [Description]")
     if not "Type" in param_yaml:
-        print(col.ERROR + "ERR: YAML file must contain parameter [Type]" + col.END)
+        logger.error("YAML file must contain parameter [Type]")
     if not "Overwrite" in param_yaml:
-        print(col.ERROR + "ERR: YAML file must contain parameter [Overwrite]" + col.END)
+        logger.error("YAML file must contain parameter [Overwrite]")
 #    if not "Tags" in param_yaml:
-#        print(col.ERROR + "ERR: YAML file must contain parameter [Tags]" + col.END)
+#        logger.error("YAML file must contain parameter [Tags]")
 
     try:
         response = ssm.put_parameter(
@@ -182,9 +193,38 @@ def create_parameter(ssm):
         Overwrite=param_yaml["Overwrite"])
 #        Tags=param_yaml["Tags"])
     except ClientError as e:
-        print(col.ERROR + e + col.END)
+        logger.error(e)
         sys.exit(1)
-    print(col.INFO + "SSM parameter [ {} ] updated in profile {}".format(param_yaml["Name"], g_profile) + col.END)
+    logger.info("SSM parameter [ {} ] created/updated in profile {}".format(param_yaml["Name"], g_profile))
+
+def delete_parameter(ssm):
+    # check if parameter exists
+    delete_flag = False
+    try:
+        resp = ssm.describe_parameters()
+    except ClientError as e:
+        logger.error(e)
+        sys.exit(1)
+
+    params = resp["Parameters"]
+    for item in params:
+        if item["Name"] == g_name:
+            delete_flag = True
+
+    # delete parameter
+    if delete_flag:
+        try:
+            response = ssm.delete_parameter(
+            Name=g_name)
+        except ClientError as e:
+            logger.error(e)
+            sys.exit(1)
+        logger.info("Deleted parameter [ {} ] in profile {}".format(g_name, g_profile))
+    else:
+        logger.info("Parameter [ {} ] not found in profile {}".format(g_name, g_profile))
+
+def update_parameter(ssm):
+    print("hello")
 
 def main():
     aws_session = boto3.Session(
@@ -195,6 +235,8 @@ def main():
         create_parameter(ssm)
     elif g_update == True:
         update_parameter(ssm)
+    elif g_delete == True:
+        delete_parameter(ssm)
     else:
         get_all_from_profile(ssm)
 
