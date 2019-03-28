@@ -1,0 +1,16 @@
+---
+
+Name: 'string'
+Description: 'string'
+Value: 'string'
+Type: 'String'|'StringList'|'SecureString'
+KeyId: 'string'
+Overwrite: True|False
+AllowedPattern: 'string'
+Tags:
+- 'Key': 'string'
+  'Value': 'string'
+- 'Key2': 'string'
+  'Value2': 'string'
+
+...
