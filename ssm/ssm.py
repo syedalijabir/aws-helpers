@@ -64,14 +64,10 @@ def params_check(parser=None):
                       default="", help="Path to yaml file with SSM parameter config")
     parser.add_option("-n", "--name", dest="name", type="string",
                       default="", help="Name of SSM parameter")
-    parser.add_option("-v", "--value", dest="value", type="string",
-                      default="", help="Value of SSM parameter")
     parser.add_option("-c", "--create", action="store_true", dest="create", default=False,
                       help="Create an SSM parameter")
     parser.add_option("-d", "--delete", action="store_true", dest="delete", default=False,
                       help="Delete an SSM parameter")
-    parser.add_option("-u", "--update", action="store_true", dest="update", default=False,
-                      help="Update an SSM parameter")
     parser.add_option("-q", "--quiet", action="store_false", dest="verbose", default=True,
                       help="Do not log on console.")
     (options, args) = parser.parse_args()
@@ -81,7 +77,7 @@ def params_check(parser=None):
     return (options, args)
 
 def read_options(options):
-    global g_profile, g_search, g_create, g_delete, g_file, g_name, g_value, g_update, globalVerbose
+    global g_profile, g_create, g_delete, g_file, g_name, globalVerbose
 
     if options:
         # Troubleshooting for profile param
@@ -103,19 +99,6 @@ def read_options(options):
                 sys.exit(2)
         g_create = options.create
         g_file   = options.yaml_file
-
-        # Troubleshooting for update & name param
-        if options.update != None and options.update == True:
-            if options.name is None or options.value is None:
-                print(col.ERROR + "ERR: Parameter Name, Value must be set for UPDATE feature" + col.END)
-                print (usage)
-                sys.exit(2)
-            elif options.name == "":
-                print(col.ERROR + "ERR: Parameter Name cannot be empty string" + col.END)
-                print (usage)
-                sys.exit(2)
-        g_update = options.update
-        g_name   = options.name
 
         if options.delete != None and options.delete == True:
             if options.name is None or options.name == "":
@@ -223,9 +206,6 @@ def delete_parameter(ssm):
     else:
         logger.info("Parameter [ {} ] not found in profile {}".format(g_name, g_profile))
 
-def update_parameter(ssm):
-    print("hello")
-
 def main():
     aws_session = boto3.Session(
         profile_name=g_profile)
@@ -233,8 +213,6 @@ def main():
 
     if g_create == True:
         create_parameter(ssm)
-    elif g_update == True:
-        update_parameter(ssm)
     elif g_delete == True:
         delete_parameter(ssm)
     else:
