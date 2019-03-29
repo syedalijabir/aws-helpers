@@ -85,8 +85,6 @@ def read_options(options):
             print(col.ERROR + "ERR: AWS Profile not defined" + col.END)
             print (usage)
             sys.exit(2)
-        else:
-            g_profile = options.profile
 
         # Troubleshooting for create & file param
         if options.create != None and options.create == True:
@@ -97,16 +95,18 @@ def read_options(options):
             if not isAccessible(options.yaml_file):
                 print(col.ERROR + "ERR: File [{}] is not accessible".format(options.yaml_file) + col.END)
                 sys.exit(2)
-        g_create = options.create
-        g_file   = options.yaml_file
 
         if options.delete != None and options.delete == True:
             if options.name is None or options.name == "":
                 print(col.ERROR + "ERR: Parameter Name must be set for DELETE feature" + col.END)
                 print (usage)
                 sys.exit(2)
-        g_delete = options.delete
 
+        g_profile = options.profile
+        g_create  = options.create
+        g_file    = options.yaml_file
+        g_delete  = options.delete
+        g_name    = options.name
         globalVerbose = options.verbose
 
 def isAccessible(path, mode="r"):
