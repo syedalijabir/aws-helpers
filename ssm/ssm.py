@@ -95,6 +95,9 @@ def read_options(options):
             if not isAccessible(options.yaml_file):
                 print(col.ERROR + "ERR: File [{}] is not accessible".format(options.yaml_file) + col.END)
                 sys.exit(2)
+        elif options.create == None and options.yaml_file != "":
+            print(col.ERROR + "ERR: -f/--file parameter also requires an explicit -c/--create flag" + col.END)
+            sys.exit(2)
 
         if options.delete != None and options.delete == True:
             if options.name is None or options.name == "":
