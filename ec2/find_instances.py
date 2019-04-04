@@ -28,9 +28,14 @@ import platform
 import pprint
 import time
 
+dir_path = os.path.dirname(os.path.realpath(__file__))
+base_path = os.path.split(os.path.split(dir_path)[0])[0]
+
+log_file = base_path + "/aws-helpers/ec2/python.log"
+
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.INFO)
-handler = logging.FileHandler("python.log")
+handler = logging.FileHandler(log_file)
 handler.setLevel(logging.INFO)
 logger.addHandler(handler)
 formatter = logging.Formatter('%(asctime)s - %(levelname)s - %(message)s')
@@ -94,19 +99,22 @@ def get_file_handler(fileName):
 
 def main():
     #logger.info("Starting main function")
-    #print(col.INFO + "hello world!" + col.END)
+    retries = 5
     aws_session = boto3.Session(
         profile_name=g_profile)
     ec2 = aws_session.client('ec2')
-    try:
-        resp = ec2.describe_instances()
-    except botocore.exceptions.ClientError as e:
-        print('request failed: {}'.format(e.response['Error']['Message']))
-        raise AwsError(e.response['Error']['Code'])
-    except botocore.exceptions.EndpointConnectionError as e:
-        logger.debug('DBG: {}'.format(e))
-        logger.debug('DBG: {}'.format(dir(e)))
-        print('request failed: {}'.format(e.response['Error']['Message']))    
+    while retries >= 0:
+        try:
+            resp = ec2.describe_instances()
+            break
+        except botocore.exceptions.ClientError as e:
+            print('request failed: {}'.format(e))
+            retries -= 1
+            if retries == 0:
+                print(col.ERROR + "Max. retries reached, try again." + col.END)
+                sys.exit(1)
+            print("Retries left: {}".format(retries))
+            time.sleep(2)
     profile_insts = {}
     reservations = resp.get("Reservations")
     for group in reservations:
