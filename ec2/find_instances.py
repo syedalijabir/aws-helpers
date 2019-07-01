@@ -127,9 +127,9 @@ def main():
                         name = item.get("Value")
                         break;
                 if name in profile_insts:
-                    profile_insts[name] = profile_insts[name] + ", " + inst[0]["PrivateIpAddress"]
+                    profile_insts[name] = profile_insts[name] + ", " + inst[0]["PrivateIpAddress"] + "    (" + inst[0]["InstanceId"] + ")"
                 else:
-                    profile_insts.update({ name : inst[0]["PrivateIpAddress"]})
+                    profile_insts.update({ name : inst[0]["PrivateIpAddress"] + "    (" + inst[0]["InstanceId"] + ")"})
     print(col.INFO + "All available instances" + col.END)
     print(json.dumps(profile_insts, sort_keys=True, indent=4))
 
