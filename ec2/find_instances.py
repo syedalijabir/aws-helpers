@@ -116,20 +116,22 @@ def main():
             print("Retries left: {}".format(retries))
             time.sleep(2)
     profile_insts = {}
-    reservations = resp.get("Reservations")
-    for group in reservations:
-        inst = group.get("Instances")
-        if inst[0]["State"]["Name"] != "terminated":
-            if "Tags" in inst[0]:
-                tags = inst[0]["Tags"]
-                for item in tags:
-                    if item.get("Key") == "Name":
-                        name = item.get("Value")
-                        break;
-                if name in profile_insts:
-                    profile_insts[name] = profile_insts[name] + ", " + inst[0]["PrivateIpAddress"] + "    (" + inst[0]["InstanceId"] + ")"
-                else:
-                    profile_insts.update({ name : inst[0]["PrivateIpAddress"] + "    (" + inst[0]["InstanceId"] + ")"})
+    if resp["Reservations"]:
+        reservations = resp["Reservations"]
+        for group in reservations:
+            if group["Instances"]:
+                inst = group["Instances"]
+                if inst[0]["State"]["Name"] != "terminated":
+                    if "Tags" in inst[0]:
+                        tags = inst[0]["Tags"]
+                        for item in tags:
+                            if item["Key"] == "Name":
+                                name = item["Value"]
+                                break
+                        if name in profile_insts:
+                            profile_insts[name] = "{}, {}    ({})".format(profile_insts[name], inst[0]["PrivateIpAddress"], inst[0]["InstanceId"])
+                        else:
+                            profile_insts.update({ name : "{}    ({})".format(inst[0]["PrivateIpAddress"], inst[0]["InstanceId"]) })
     print(col.INFO + "All available instances" + col.END)
     print(json.dumps(profile_insts, sort_keys=True, indent=4))
 
