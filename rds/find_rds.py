@@ -151,11 +151,12 @@ def main(cli_arguments):
     print(col.INFO + "All available databases" + col.END)
     print(json.dumps(found_names, indent=4, sort_keys=True, default=str))
 
-    if parameters["search"] != "":
-        for database in instances:
-            if parameters["search"].lower() in database["Name"].lower():
-                print(col.GREEN + "{}".format(database["Name"]) + col.END)
-                print(json.dumps(database, indent=4, sort_keys=True, default=str))
+    if parameters["search"]:
+        if parameters["search"] != "":
+            for database in instances:
+                if parameters["search"].lower() in database["Name"].lower():
+                    print(col.GREEN + "{}".format(database["Name"]) + col.END)
+                    print(json.dumps(database, indent=4, sort_keys=True, default=str))
 
 if __name__ == '__main__':
     try:
