@@ -117,14 +117,12 @@ def main():
             time.sleep(2)
     profile_insts = {}
     if resp["Reservations"]:
-        reservations = resp["Reservations"]
-        for group in reservations:
+        for group in resp["Reservations"]:
             if group["Instances"]:
                 inst = group["Instances"]
                 if inst[0]["State"]["Name"] != "terminated":
                     if "Tags" in inst[0]:
-                        tags = inst[0]["Tags"]
-                        for item in tags:
+                        for item in inst[0]["Tags"]:
                             if item["Key"] == "Name":
                                 name = item["Value"]
                                 break
