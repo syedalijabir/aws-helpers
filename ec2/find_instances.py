@@ -120,7 +120,7 @@ def main():
         for group in resp["Reservations"]:
             if group["Instances"]:
                 inst = group["Instances"]
-                if inst[0]["State"]["Name"] != "terminated":
+                if inst[0]["State"]["Name"] != "terminated" and inst[0]["State"]["Name"] != "stopped":
                     if "Tags" in inst[0]:
                         for item in inst[0]["Tags"]:
                             if item["Key"] == "Name":
